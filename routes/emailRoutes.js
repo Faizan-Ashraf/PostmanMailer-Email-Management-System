@@ -1,8 +1,8 @@
 import express from 'express';
 const router = express.Router();
-import Projects from '../models/project.js';
+import emails from '../models/emails.js';
 import jwtAuthMiddleware from '../jwt.js';
-import User from '../models/user.js';
+import User from '../models/users.js';
 
 const isStudent = (req, res, next) => {
     if (req.user.role !== 'student') {

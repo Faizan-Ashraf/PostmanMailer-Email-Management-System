@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-const mongoDbURL = 'mongodb://localhost:27017/FYPManagementSystem';
+const mongoDbURL = 'mongodb://localhost:27017/PostmanMailer';
 mongoose.connect(mongoDbURL);
 
 const db = mongoose.connection;
