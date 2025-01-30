@@ -2,30 +2,41 @@ import express from 'express';
 const router = express.Router();
 import Emails from '../models/emails.js';
 import jwtAuthMiddleware from '../jwt.js';
-import User from '../models/users.js';
-import Mails from '../models/emails.js';
+
 
 router.post('/send', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
     try {
-        const data = req.body;
-        const newMail = new Emails(data);
-        const response = await newMail.save();
-        console.log("Mail send Successfully!");
-        res.status(200).json({Message: 'Mail Send Successfully'}, response);
+        const userEmail = req.user.email;
+        const { to, from, subject, mail } = req.body;
+
+        if (from !== userEmail) {
+            return res.status(403).json({ error: 'You can only send emails from your own email address.' });
+        }
+
+        const newMail = new Emails({ to, from, subject, mail });
+        await newMail.save();
+        console.log("Mail sent successfully!");
+        res.status(200).json({ message: 'Mail sent successfully' });
     } catch (error) {
-        console.log("Failed!", error);
+        console.error("Failed to send mail!", error);
         res.status(500).json({ error: 'An error occurred while sending this mail.' });
     }
 });
 
 
+
 router.get('/', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
     try {
-        
-        mails = await Mails.find({ to: User.email });
+        const userEmail = req.user.email;
+        const mails = await Emails.find({ to: userEmail });
+
+        if (mails.length === 0) {
+            return res.status(200).json({ message: 'Inbox is empty' });
+        }
+
         res.status(200).json(mails);
     } catch (error) {
-        console.log(error);
+        console.error("Failed to fetch emails!", error);
         res.status(500).json({ error: 'An error occurred while fetching mails!' });
     }
 });
@@ -33,61 +44,36 @@ router.get('/', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
 
 router.get('/:email', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
     try {
-        const projectId = req.params.id;
-        let project;
-        if (req.user.role === 'student') {
-            project = await Projects.findOne({ _id: projectId, studentId: req.user._id });
-        } else if (req.user.role === 'supervisor') {
-            project = await Projects.findById(projectId);
+        const email = req.params.email;
+        const requestedMails = await Emails.find({ from: email });
+
+        if (requestedMails.length === 0) {
+            return res.status(404).json({ message: "No emails found from this sender" });
         }
 
-        if (!project) {
-            return res.status(404).json("Data not Found");
-        }
-
-        res.status(200).json(project);
+        res.status(200).json(requestedMails);
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'An error occurred while fetching the project!' });
+        console.error("Error fetching mails!", error);
+        res.status(500).json({ error: 'An error occurred while fetching mails!' });
     }
 });
 
-router.put('/:id', jwtAuthMiddleware.jwtAuthMiddleware, isSupervisor, async (req, res) => {
+
+router.delete('/:id', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
     try {
-        const projectId = req.params.id;
-        const updatedData = req.body;
-        const response = await Projects.findByIdAndUpdate(projectId, updatedData, {
-            new: true,
-            runValidators: true,
-        });
+        const mailId = req.params.id;
+        const response = await Emails.findByIdAndDelete(mailId);
 
         if (!response) {
-            return res.status(404).json("Data not Found");
+            return res.status(404).json({ message: "Mail not found" });
         }
 
-        console.log("Data Updated Successfully");
-        res.status(200).json(response);
+        console.log("Mail deleted successfully");
+        res.status(200).json({ message: "Mail deleted successfully" });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Internal Server Error!' });
-    }
-});
-
-router.delete('/:id', jwtAuthMiddleware.jwtAuthMiddleware, isSupervisor, async (req, res) => {
-    try {
-        const projectId = req.params.id;
-        const response = await Projects.findByIdAndDelete(projectId);
-        if (!response) {
-            return res.status(404).json("Data not Found");
-        }
-
-        console.log("Data Deleted Successfully");
-        res.status(200).json(response);
-    } catch (error) {
-        console.log(error);
+        console.error("Error deleting mail!", error);
         res.status(500).json({ error: 'Internal Server Error!' });
     }
 });
 
 export default router;
-
