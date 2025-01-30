@@ -1,58 +1,37 @@
 import express from 'express';
 const router = express.Router();
-import emails from '../models/emails.js';
+import Emails from '../models/emails.js';
 import jwtAuthMiddleware from '../jwt.js';
 import User from '../models/users.js';
+import Mails from '../models/emails.js';
 
-const isStudent = (req, res, next) => {
-    if (req.user.role !== 'student') {
-        return res.status(403).json({ error: 'Access denied. Only students can perform this action.' });
-    }
-    next();
-};
-
-const isSupervisor = (req, res, next) => {
-    if (req.user.role !== 'supervisor') {
-        return res.status(403).json({ error: 'Access denied. Only supervisors can perform this action.' });
-    }
-    next();
-};
-
-router.post('/', jwtAuthMiddleware.jwtAuthMiddleware, isStudent, async (req, res) => {
+router.post('/send', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
     try {
         const data = req.body;
-        data.studentId = req.user._id; // Automatically set the studentId to the logged-in user
-        const newProject = new Projects(data);
-        const response = await newProject.save();
-        console.log("Project Added Successfully!");
-        res.status(200).json(response);
+        const newMail = new Emails(data);
+        const response = await newMail.save();
+        console.log("Mail send Successfully!");
+        res.status(200).json({Message: 'Mail Send Successfully'}, response);
     } catch (error) {
         console.log("Failed!", error);
-        res.status(500).json({ error: 'An error occurred while adding the project.' });
+        res.status(500).json({ error: 'An error occurred while sending this mail.' });
     }
 });
+
 
 router.get('/', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
     try {
-        let projects;
-        if (req.user.role === 'student') {
-            projects = await Projects.find({ studentId: req.user._id });
-        } else if (req.user.role === 'supervisor') {
-            projects = await Projects.find();
-        }
-
-        if (!projects || projects.length === 0) {
-            return res.status(404).json("Data not Found or Empty Data");
-        }
-
-        res.status(200).json(projects);
+        
+        mails = await Mails.find({ to: User.email });
+        res.status(200).json(mails);
     } catch (error) {
         console.log(error);
-        res.status(500).json({ error: 'An error occurred while fetching data!' });
+        res.status(500).json({ error: 'An error occurred while fetching mails!' });
     }
 });
 
-router.get('/:id', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
+
+router.get('/:email', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
     try {
         const projectId = req.params.id;
         let project;
@@ -111,3 +90,4 @@ router.delete('/:id', jwtAuthMiddleware.jwtAuthMiddleware, isSupervisor, async (
 });
 
 export default router;
+
