@@ -7,6 +7,6 @@ const mailsSchema = new mongoose.Schema({
     mail:{type: String, required: true},
 })
 
-const Mails = mongoose.model('Mails',projectsSchema,'mails');
+const Mails = mongoose.model('Mails',mailsSchema,'mails');
 
 export default Mails;

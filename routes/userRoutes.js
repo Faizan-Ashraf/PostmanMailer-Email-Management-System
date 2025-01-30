@@ -1,5 +1,5 @@
 import express from 'express';
-import User from '../models/user.js';
+import User from '../models/users.js';
 import jwtHelper from '../jwt.js';
 import bcrypt from 'bcrypt';
 
@@ -34,7 +34,7 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Authentication failed. Wrong password.' });
         }
 
-        const token = jwtHelper.generateToken({ id: user._id, role: user.role });
+        const token = jwtHelper.generateToken({ id: user._id});
         res.status(200).json({ token });
     } catch (error) {
         console.error("Error during login:", error);
