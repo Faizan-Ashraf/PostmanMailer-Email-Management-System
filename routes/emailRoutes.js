@@ -9,7 +9,7 @@ router.post('/send', jwtAuthMiddleware.jwtAuthMiddleware, async (req, res) => {
         const userEmail = req.user.email;
         const { to, from, subject, mail } = req.body;
 
-        if (from !== userEmail) {
+        if (from != userEmail) {
             return res.status(403).json({ error: 'You can only send emails from your own email address.' });
         }
 
